@@ -6,6 +6,8 @@ class Args(dict):
       spec = arg_spec[i]
       if type(spec) is str: # spec is the name of the argument
         self[spec] = arg_str
+        if '_' == arg_str: # underscore means dont-care
+          self[spec] = None
       else:
         assert type(spec) is tuple
         arg_name, arg_type = spec

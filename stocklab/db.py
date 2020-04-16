@@ -38,6 +38,7 @@ class get_db(pydal.DAL, ContextDecorator):
   def __exit__(self, err_type, err_value, traceback):
     if isinstance(err_type, Exception):
       self.logger.error(err_value)
+    self.commit()
     self.close()
     return False # do not eliminate error
   
@@ -100,4 +101,3 @@ class get_db(pydal.DAL, ContextDecorator):
         self[mod.name].update_or_insert(_key_q(schema), **rec)
       else:
         self[mod.name].insert(**rec)
-    self.commit()
