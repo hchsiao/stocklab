@@ -128,7 +128,7 @@ def evaluate(path):
   if not _init_flag:
     _init()
   global _logger
-  _logger.info(f'evaluating: {path}')
+  _logger.debug(f'evaluating: {path}')
   mod_name = path.split('.')[0]
   assert mod_name not in _metamodules
   return _eval(path)
