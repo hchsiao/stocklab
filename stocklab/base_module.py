@@ -29,9 +29,9 @@ class Module(metaclass=abc.ABCMeta):
   def spec(self):
     return type(self).spec
 
-  def evaluate(self, path):
+  def evaluate(self, path, peek=False):
     use_cache = 'disable_cache' not in self.spec or not self.spec['disable_cache']
-    if path in self.cache and use_cache:
+    if path in self.cache and use_cache and not peek:
       return self.cache[path]
     else:
       mod_name = path.split('.')[0]
@@ -44,8 +44,12 @@ class Module(metaclass=abc.ABCMeta):
         return None
       assert len(arg_spec) == len(args_list)
       args = stocklab.Args(args_list, arg_spec)
-      result = self.run(args)
-      if use_cache:
+
+      if peek:
+        result = self.access_db(args, peek=True)
+      else:
+        result = self.run(args)
+      if use_cache and not peek:
         self.cache[path] = result
       return result
 
@@ -53,12 +57,27 @@ class Module(metaclass=abc.ABCMeta):
   def run(self, args):
     raise NotImplementedError()
 
-  def access_db(self, args):
+  def peak_db(self, db, args):
+    raise NotImplementedError()
+
+  def peek(self, args):
+    return self.evaluate(args, peek=True)
+
+  def access_db(self, args, peek=False):
     query_res = None
     with stocklab.get_db('database') as db:
-      db.declare_table(self.name, self.spec['schema'])
+      if 'schema' in self.spec:
+        db.declare_table(self.name, self.spec['schema'])
+      if 'db_dependencies' in self.spec:
+        for dep in self.spec['db_dependencies']:
+          _mod = stocklab.get_module(dep)
+          assert 'schema' in _mod.spec, 'cannot depend on modules that do not have a schema'
+          db.declare_table(dep, _mod.spec['schema'])
       while True:
-        query_res, db_miss, crawl_args = self.query_db(db, args)
+        if peek:
+          query_res, db_miss, crawl_args = self.peak_db(db, args)
+        else:
+          query_res, db_miss, crawl_args = self.query_db(db, args)
         if db_miss:
           self.logger.info('db miss')
           if stocklab.config['force_offline']:

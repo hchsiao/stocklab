@@ -116,22 +116,25 @@ def get_crawler(crawler_name):
     _create_singleton(crawlers_path, crawler_name)
   return _crawlers[crawler_name]
 
-def _eval(path):
+def _eval(path, peek=False):
   if not _init_flag:
     _init()
   assert '{' not in path
   assert '}' not in path
   mod = get_module(path.split('.')[0])
-  return mod.evaluate(path)
+  return mod.peek(path) if peek else mod.evaluate(path)
 
-def evaluate(path):
+def evaluate(path, peek=False):
   if not _init_flag:
     _init()
   global _logger
   _logger.debug(f'evaluating: {path}')
   mod_name = path.split('.')[0]
   assert mod_name not in _metamodules
-  return _eval(path)
+  return _eval(path, peek=peek)
+
+def peek(path):
+  return evaluate(path, peek=True)
 
 import stocklab.utils
 def _update(mod):
