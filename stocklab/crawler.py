@@ -1,6 +1,14 @@
 import time
 import stocklab
 
+class CrawlerTrigger(Exception):
+  def __init__(self, **kwargs):
+    super().__init__()
+    self.kwargs = kwargs
+
+  def __str__(self):
+    return f'CrawlerTrigger {self.kwargs}'
+
 class SpeedLimiterMixin(object):
   def __init__(self):
     assert isinstance(self, stocklab.Crawler)

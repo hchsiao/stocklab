@@ -116,57 +116,34 @@ def get_crawler(crawler_name):
     _create_singleton(crawlers_path, crawler_name)
   return _crawlers[crawler_name]
 
-def _eval(path, peek=False):
-  if not _init_flag:
-    _init()
+def evaluate(path, peek=False, meta=False):
   assert '{' not in path
   assert '}' not in path
-  mod = get_module(path.split('.')[0])
-  return mod.peek(path) if peek else mod.evaluate(path)
-
-def evaluate(path, peek=False):
   if not _init_flag:
     _init()
   global _logger
   _logger.debug(f'evaluating: {path}')
+
   mod_name = path.split('.')[0]
-  assert mod_name not in _metamodules
-  return _eval(path, peek=peek)
+  if meta:
+    assert mod_name in _metamodules
+  else:
+    assert mod_name not in _metamodules
+
+  mod = get_module(mod_name)
+  if meta:
+    mod.update()
+  return mod._eval(path, peek=peek)
 
 def peek(path):
   return evaluate(path, peek=True)
 
-import stocklab.utils
-def _update(mod):
-  global config
-  if not stocklab.utils.is_outdated(mod.name):
-    return
-  with get_db('database') as db:
-    last_args = None
-    db.declare_table(mod.name, mod.spec['schema'])
-    while True:
-      update_required, crawl_args = mod.check_update(db, last_args)
-      last_args = crawl_args
-      if update_required:
-        if config['force_offline']:
-          raise NoLongerAvailable('Please unset' +\
-              'force_offline option to enable crawlers')
-        mod.logger.info('meta miss')
-        res = mod.parser(**crawl_args)
-        db.update(mod, res)
-        stocklab.utils.set_last_update_datetime(mod.name)
-      else:
-        break
+def metaevaluate(path, peek=False):
+  return evaluate(path, peek=peek, meta=True)
 
-def metaevaluate(path):
-  if not _init_flag:
-    _init()
-  global _logger
-  _logger.debug(f'evaluating: {path}')
-  mod_name = path.split('.')[0]
-  assert mod_name in _metamodules
-  _update(get_module(mod_name))
-  return _eval(path)
+def debug_mode():
+  print('switching to debug mode..')
+  change_log_level(logging.DEBUG)
 
 def _init():
   global _init_flag
@@ -194,4 +171,4 @@ def _init():
 
   for m in _metamodules.keys():
     mod = _metamodules[m]
-    _update(mod)
+    mod.update()

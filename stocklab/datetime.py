@@ -87,7 +87,7 @@ def date_to_timestamp(date):
   assert type(date) is Date
   return date.timestamp()
 
-def update_required(last_dt, offset=0, period=(1, 0, 0)):
+def in_time_window(dt, offset=0, period=(1, 0, 0)):
   if type(period) is tuple:
     assert len(period) == 3
     d, h, m = period
@@ -99,6 +99,6 @@ def update_required(last_dt, offset=0, period=(1, 0, 0)):
   if type(offset) is int:
     offset = timedelta(minutes=offset)
   
-  _norm = lambda dt: datetime_to_timestamp(dt - offset) / period
+  _norm = lambda _dt: datetime_to_timestamp(_dt - offset) / period
   curr_dt = now()
-  return _norm(curr_dt) >= math.ceil(_norm(last_dt))
+  return _norm(curr_dt) < math.ceil(_norm(dt))
