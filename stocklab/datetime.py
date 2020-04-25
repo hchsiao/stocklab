@@ -3,6 +3,7 @@ import copy
 import functools
 import time
 from datetime import datetime, timedelta
+from datetime import date as dt_date
 from dateutil.relativedelta import relativedelta
 import calendar
 
@@ -18,15 +19,18 @@ def now():
 @functools.total_ordering
 class Date:
   def today():
-    dt = now()
-    return Date(f'{dt.year:04}-{dt.month:02}-{dt.day:02}')
+    if 'today_is' in stocklab.config:
+      return Date(stocklab.config['today_is'])
+    else:
+      dt = now()
+      return Date(f'{dt.year:04}-{dt.month:02}-{dt.day:02}')
 
   def __init__(self, date, tstmp=False):
     if tstmp:
       if type(date) is str:
         date = int(date)
       date = datetime.utcfromtimestamp(date).strftime('%Y-%m-%d')
-    if type(date) is type(1):
+    if type(date) is int or type(date) is dt_date:
       date = str(date)
     if '-' in date or '/' in date:
       y, m, d = date.split('-') if '-' in date else date.split('/')

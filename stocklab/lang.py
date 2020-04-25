@@ -50,7 +50,8 @@ class Expr:
       arg_spec = [(a, str) if type(a) is str else a for a in arg_spec]
       arg_names = [f'<field: {a[0]}>' for a in arg_spec]
       arg_types = [a[1] for a in arg_spec]
-      return '.'.join(self.argv + arg_names[len(self.argv) - 1:])
+      argv_parentheses = [f'({s})' for s in self.argv]
+      return '.'.join(argv_parentheses + arg_names[len(self.argv) - 1:])
 
   def __repr__(self):
     return self.__str__()

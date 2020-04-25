@@ -1,6 +1,7 @@
 import abc
 import logging
 from datetime import datetime
+import re
 
 import stocklab
 from stocklab.error import NoLongerAvailable
@@ -41,39 +42,75 @@ class Module(metaclass=abc.ABCMeta):
   def peek(self, db, args):
     raise NotImplementedError()
 
+  def update(self):
+    raise NotImplementedError()
+
+  def type_validator(self, retval):
+    return retval is not None
+
+  def args_validator(self, arg_spec):
+    return True
+
   def _eval(self, path, peek=False):
     use_cache = 'disable_cache' not in self.spec or not self.spec['disable_cache']
     if path in self.cache and use_cache and not peek:
       return self.cache[path]
-    else:
-      mod_name = path.split('.')[0]
-      assert self.name == mod_name
-      args_list = tuple(path.split('.')[1:])
-      try:
-        arg_spec = self.spec['args']
-      except:
-        self.logger.error("Cannot find attribute: spec")
-        return None
-      assert len(arg_spec) == len(args_list)
-      args = stocklab.Args(args_list, arg_spec)
+    assert not re.search(r'\(((?!\)).)*?\(', path), f'expression cannot have nested parentheses: {path}'
+    
+    splited = [e.strip('()') for e in re.split(r'(\(.*?\)|\.)', path) if e and e != '.']
+    mod_name = splited[0]
+    assert self.name == mod_name, f'{splited}'
+    arg_spec = self.spec['args']
+    assert self.args_validator(arg_spec)
+    assert len(arg_spec) == len(splited) - 1, f'invalid expression: {path}'
 
-      result = self._eval_in_context(args, peek=peek)
-      if use_cache and not peek:
+    from collections.abc import Iterable
+    _replace = lambda t, i, elem: t[:i] + [elem] + t[i+1:]
+    for i in range(len(splited)):
+      field = splited[i]
+      try:
+        float(field)
+        continue
+      except ValueError:
+        pass
+      if '$' != field[0]:
+        continue
+      values = stocklab.metaevaluate(field.lstrip('$'))
+      assert isinstance(values, Iterable)
+      return [
+          stocklab.evaluate('.'.join(
+            [f'({s})' for s in _replace(splited, i, str(val))]
+            ))
+          for val in values]
+
+    args_list = tuple(splited[1:])
+    args = stocklab.Args(args_list, arg_spec)
+
+    result = self._eval_in_context(args, peek=peek)
+    if not peek:
+      assert self.type_validator(result)
+      if use_cache:
         self.cache[path] = result
-      return result
+    return result
 
   def _eval_in_context(self, args, peek=False):
-    if 'schema' not in self.spec:
+    if 'schema' not in self.spec and 'db_dependencies' not in self.spec:
       assert not peek
       return self.evaluate(None, args)
+
     with stocklab.get_db('database') as db:
-      db.declare_table(self.name, self.spec['schema'])
+      if 'schema' in self.spec:
+        db.declare_table(self.name, self.spec['schema'])
       if 'db_dependencies' in self.spec:
         for dep in self.spec['db_dependencies']:
           _mod = stocklab.get_module(dep)
           assert 'schema' in _mod.spec, 'cannot depend on modules that do not have a schema'
           db.declare_table(dep, _mod.spec['schema'])
-      while True: # TODO: prevent crawl-forever?
+      if 'schema' not in self.spec:
+        assert not peek
+        return self.evaluate(db, args)
+
+      while True:
         _f = self.peek if peek else self.evaluate
         try:
           return _f(db, args)
@@ -114,12 +151,15 @@ class MetaModule(Module):
 
   def db_is_fresh(self, db, last_crawl):
     if last_crawl is None:
-      self.logger.info(f'Start default meta-module update routine {self.name}')
+      self.logger.info(f'Start default meta-module update routine')
       raise CrawlerTrigger()
     else:
       self.logger.info(f'Update routine ends')
 
   def update(self):
+    if 'schema' not in self.spec:
+      # module has nothing to do with DB & to update
+      return
     if not self.is_outdated():
       return
     with get_db('database') as db:

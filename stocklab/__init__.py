@@ -39,6 +39,7 @@ def create_logger(name):
 from stocklab.args import Args
 from stocklab.base_crawler import Crawler
 from stocklab.base_module import Module, MetaModule
+from stocklab.module import Primitive
 from stocklab.db import get_db
 from stocklab.error import *
 from .states import set as set_state
@@ -124,11 +125,11 @@ def evaluate(path, peek=False, meta=False):
   global _logger
   _logger.debug(f'evaluating: {path}')
 
-  mod_name = path.split('.')[0]
+  mod_name = path.split('.')[0].strip('()')
   if meta:
-    assert mod_name in _metamodules
+    assert mod_name in _metamodules, f'wrong module name? ({mod_name})'
   else:
-    assert mod_name not in _metamodules
+    assert mod_name not in _metamodules, f'wrong meta-module name? ({mod_name})'
 
   mod = get_module(mod_name)
   if meta:
@@ -140,6 +141,11 @@ def peek(path):
 
 def metaevaluate(path, peek=False):
   return evaluate(path, peek=peek, meta=True)
+
+def update(mod_name):
+  mod = get_module(mod_name)
+  assert isinstance(mod, MetaModule) or isinstance(mod, Primitive)
+  return mod.update()
 
 def debug_mode():
   print('switching to debug mode..')

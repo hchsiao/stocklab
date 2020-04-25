@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='stocklab',
-    version='0.3.1',
+    version='0.5.1',
     description='A modular python programming interface to access financial data from various sources.',
 
     long_description=long_description,
