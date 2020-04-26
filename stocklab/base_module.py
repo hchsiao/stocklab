@@ -151,10 +151,10 @@ class MetaModule(Module):
 
   def db_is_fresh(self, db, last_crawl):
     if last_crawl is None:
-      self.logger.info(f'Start default meta-module update routine')
+      self.logger.info(f'Start default meta-module refresh routine')
       raise CrawlerTrigger()
     else:
-      self.logger.info(f'Update routine ends')
+      self.logger.info(f'Refresh ends')
 
   def update(self):
     if 'schema' not in self.spec:
