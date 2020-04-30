@@ -67,28 +67,49 @@ def plot(dates, ohlc, signs=None, aux={}, top_aux={}, side_aux={}):
             facecolor='red', alpha=0.2)
   plt.show()
 
-def simulate(dates, signs, prices):
+def simulate(dates, signs, prices, verbose=False):
   def _sim(dates, signs, prices, balance=0, cost=None, sell_th=None):
     date = dates[0]
     price = prices[0]
     sign = signs[0]
     if len(dates) == 1:
       if cost:
-        print(f'[{date}] sell (terminate) @ {price} (gain: {price-cost})')
+        if verbose:
+          print(f'[{date}] sell (terminate) @ {price} (gain: {price-cost:.3})')
         return balance + price
       else:
         return balance
     else:
       if sell_th and cost and price - cost > sell_th:
-        print(f'[{date}] sell (over threshold) @ {price} (gain: {price-cost})')
+        if verbose:
+          print(f'[{date}] sell (over threshold) @ {price} (gain: {price-cost:.3})')
         return _sim(dates[1:], signs[1:], prices[1:], balance + price, None, sell_th)
       elif 1 == sign and not cost:
-        print(f'[{date}] buy @ {price}')
+        if verbose:
+          print(f'[{date}] buy @ {price}')
         return _sim(dates[1:], signs[1:], prices[1:], balance - price, price, sell_th)
       elif -1 == sign and cost:
-        print(f'[{date}] sell @ {price} (gain: {price-cost})')
+        if verbose:
+          print(f'[{date}] sell @ {price} (gain: {price-cost:.3})')
         return _sim(dates[1:], signs[1:], prices[1:], balance + price, None, sell_th)
       else:
         return _sim(dates[1:], signs[1:], prices[1:], balance, cost, sell_th)
   return _sim(dates, signs, prices)
 
+def random_simulate(date, days, dates_expr, ohlc_expr, sign_expr, stocks_expr=None, verbose=False):
+  dates_expr = dates_expr(date, days)
+  dates = stocklab.metaevaluate(dates_expr)
+  if not stocks_expr:
+    stocks_expr = stocklab.config['stocks_of_interest']
+
+  stocks = np.array(list(stocklab.metaevaluate(stocks_expr)))
+  np.random.shuffle(stocks)
+
+  def _sim(stock_id):
+    ohlcs = np.array(stocklab.evaluate(ohlc_expr(stock_id, f'(${dates_expr})')))
+    prices = ohlcs[:,3]
+    signs = stocklab.evaluate(sign_expr(stock_id, f'(${dates_expr})'))
+    return simulate(dates, signs, prices, verbose)
+
+  for sid in stocks:
+    yield sid, _sim(sid)

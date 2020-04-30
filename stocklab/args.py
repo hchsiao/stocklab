@@ -1,5 +1,7 @@
 class Args(dict):
   def __init__(self, args_list, arg_spec):
+    self._path = '.'.join(args_list)
+
     assert type(arg_spec) is list
     for i in range(len(arg_spec)):
       arg_str = args_list[i]

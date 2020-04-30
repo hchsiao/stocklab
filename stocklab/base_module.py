@@ -115,7 +115,7 @@ class Module(metaclass=abc.ABCMeta):
         try:
           return _f(db, args)
         except CrawlerTrigger as t:
-          self.logger.info('db miss')
+          self.logger.info(f'Data({args._path}) does not exist in DB, crawling...')
           if stocklab.config['force_offline']:
             raise NoLongerAvailable('Please unset' +\
                 'force_offline option to enable crawlers')
@@ -173,7 +173,7 @@ class MetaModule(Module):
           if stocklab.config['force_offline']:
             raise NoLongerAvailable('Please unset' +\
                 'force_offline option to enable crawlers')
-          self.logger.info('meta miss')
+          self.logger.info(f'Refresh required, preparing...')
           db.update(self, self.crawler_entry(**t.kwargs))
           self.set_last_update_datetime()
         else:
