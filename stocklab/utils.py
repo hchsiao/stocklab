@@ -7,8 +7,8 @@ from mplfinance.original_flavor import candlestick_ohlc
 LARGE_NUM = 5000
 
 def plot(dates, ohlc, signs=None, aux={}, top_aux={}, side_aux={}):
-  dates = np.array([date2num(d.datetime) for d in dates])
-  ohlc = np.array(ohlc)
+  dates = np.asarray([date2num(d.datetime) for d in dates])
+  ohlc = np.asarray(ohlc)
 
   plt.rc('axes', grid=True)
   plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
@@ -34,13 +34,13 @@ def plot(dates, ohlc, signs=None, aux={}, top_aux={}, side_aux={}):
       width=0.5, colorup='r', colordown='green', alpha=0.6)
 
   for k, v in top_aux.items():
-    v = np.array(v)
+    v = np.asarray(v)
     axt.plot(dates, v, label=k, drawstyle='steps-post')
   if aux:
     axt.legend(loc='upper left')
 
   for k, v in aux.items():
-    v = np.array(v)
+    v = np.asarray(v)
     ax.plot(dates, v, label=k, drawstyle='steps-post')
   if aux:
     ax.legend(loc='upper left')
@@ -52,7 +52,7 @@ def plot(dates, ohlc, signs=None, aux={}, top_aux={}, side_aux={}):
     return retval
   
   if signs is not None:
-    signs = np.array(signs)
+    signs = np.asarray(signs)
     int_idx = interleave(
         dates,
         dates + 1
@@ -102,14 +102,33 @@ def random_simulate(date, days, dates_expr, ohlc_expr, sign_expr, stocks_expr=No
   if not stocks_expr:
     stocks_expr = stocklab.config['stocks_of_interest']
 
-  stocks = np.array(list(stocklab.metaevaluate(stocks_expr)))
+  stocks = np.asarray(list(stocklab.metaevaluate(stocks_expr)))
   np.random.shuffle(stocks)
 
   def _sim(stock_id):
-    ohlcs = np.array(stocklab.evaluate(ohlc_expr(stock_id, f'(${dates_expr})')))
+    ohlcs = np.asarray(stocklab.evaluate(ohlc_expr(stock_id, f'(${dates_expr})')))
     prices = ohlcs[:,3]
     signs = stocklab.evaluate(sign_expr(stock_id, f'(${dates_expr})'))
     return simulate(dates, signs, prices, verbose)
 
   for sid in stocks:
     yield sid, _sim(sid)
+
+def convolve(xs, kernel='average', n=None):
+    KERNEL_MAPPERS = {
+        'average': lambda n: np.ones(n),
+        'exp': lambda n: np.exp(np.linspace(-1., 0., n)),
+        }
+    if kernel in KERNEL_MAPPERS.keys():
+      assert n
+      kernel = KERNEL_MAPPERS[kernel](n)
+      kernel /= kernel.sum()
+
+    assert len(xs) > len(kernel)
+    xs = np.asarray(xs)
+    ys = np.convolve(xs, kernel, mode='same')
+    n_boundary = (len(kernel) - 1) / 2.0
+    left_boundary = int(n_boundary)
+    ys[:left_boundary] = np.nan
+    ys[left_boundary + len(xs) - len(kernel) + 1:] = np.nan
+    return ys
