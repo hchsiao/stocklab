@@ -81,6 +81,9 @@ def change_log_level(level):
   if not _init_flag:
     _init()
 
+  global _logger
+  _logger.setLevel(level)
+
 def _create_singleton(prefix, name):
   path = os.path.join(prefix, name + '.py')
   spec = importlib.util.spec_from_file_location(name, location=path)
