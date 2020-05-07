@@ -1,4 +1,6 @@
 # stocklab
+- TODO
+  - control no. of instance for class get_db to detect cases where OperationalError: database is locked could occur
 
 ## Metaevaluate
 - metadata: known data in the dependency evaluation phase (e.g. valid_date)
