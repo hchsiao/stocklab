@@ -10,13 +10,27 @@ def _get_keys(schema):
       ]
 
 class get_db(pydal.DAL, ContextDecorator):
+  _cfg_inst = {}
+  _inst_cnt = {}
   def __init__(self, config_name, *args, **kwargs):
     self.__args = args
     self.__kwargs = kwargs
-    self.config = stocklab.config[config_name]
-    self.logger = stocklab.create_logger('stocklab_db')
+    self.config_name = config_name
+    if config_name not in get_db._inst_cnt:
+      get_db._inst_cnt[config_name] = 1
+    else:
+      get_db._inst_cnt[config_name] += 1
 
   def __enter__(self):
+    if get_db._inst_cnt[self.config_name] > 1:
+      self._singleton = get_db._cfg_inst[self.config_name]
+      return self._singleton
+    else:
+      self._singleton = None
+    self.config = stocklab.config[self.config_name]
+    self.logger = stocklab.create_logger(f'stocklab_db__{self.config_name}')
+    get_db._cfg_inst[self.config_name] = self
+
     assert self.config['type'] in ['sqlite', 'mssql']
     if self.config['type'] == 'sqlite':
       import os
@@ -36,10 +50,13 @@ class get_db(pydal.DAL, ContextDecorator):
     return self
 
   def __exit__(self, err_type, err_value, traceback):
+    get_db._inst_cnt[self.config_name] -= 1
+    db = self._singleton or self
     if isinstance(err_type, Exception):
-      self.logger.error(err_value)
-    self.commit()
-    self.close()
+      db.logger.error(err_value)
+    if get_db._inst_cnt[self.config_name] == 0:
+      db.commit()
+      db.close()
     return False # do not eliminate error
   
   def declare_table(self, name, schema):
@@ -52,9 +69,10 @@ class get_db(pydal.DAL, ContextDecorator):
       except KeyError:
         pass
       return pydal.Field(name, **_cfg)
-    fields = [_field(field_name, schema[field_name])
-        for field_name in schema.keys()]
-    self.define_table(name, *fields)
+    if name not in self.tables:
+      fields = [_field(field_name, schema[field_name])
+          for field_name in schema.keys()]
+      self.define_table(name, *fields)
 
   def update(self, mod, res):
     assert type(res) is list
