@@ -1,10 +1,8 @@
 # stocklab
-- TODO
-  - control no. of instance for class get_db to detect cases where OperationalError: database is locked could occur
+This package does not work alone, extensions are required. Example of extesion: [stocklab-twse](https://github.com/hchsiao/stocklab-twse)
 
-## Metaevaluate
-- metadata: known data in the dependency evaluation phase (e.g. valid_date)
-- internal id of stocks are not static
+## TODO
+- control no. of instance for class get_db to detect cases where 'OperationalError: database is locked' could occur
 
 ## Design choices
 - stocklab expressions cannot contain curly-braces
