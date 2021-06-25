@@ -73,7 +73,7 @@ class Primitive(stocklab.Module):
         try:
           stocklab.peek(f'{self.name}.(${sl.name}).{today}')
         except InvalidDateRequested:
-          self.logger.info(f'Today ({today}) is not trade date')
+          self.logger.error(f'Today ({today}) is not trade date')
         self.logger.info('End update')
 
 class Sign(stocklab.Module):

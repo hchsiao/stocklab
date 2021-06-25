@@ -37,6 +37,7 @@ setup(
     python_requires='>=3.5',
 
     install_requires=[
+        'python-dateutil',
         'pyDAL',
         'pyyaml',
         ],
