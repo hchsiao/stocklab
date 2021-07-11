@@ -1,3 +1,77 @@
+import abc
+import logging
+from datetime import datetime
+import re
+
+import stocklab
+from stocklab.error import NoLongerAvailable
+from stocklab.crawler import CrawlerTrigger
+from stocklab.datetime import datetime_to_timestamp, now, in_time_window
+from stocklab.db import get_db
+
+class Module(metaclass=abc.ABCMeta):
+  def _eval_in_context(self, args, peek=False):
+    if 'schema' not in self.spec and 'db_dependencies' not in self.spec:
+      assert not peek
+      return self.evaluate(None, args)
+
+    with stocklab.get_db('database') as db:
+      if 'schema' in self.spec:
+        db.declare_table(self.name, self.spec['schema'])
+      if 'db_dependencies' in self.spec:
+        for dep in self.spec['db_dependencies']:
+          _mod = stocklab.get_module(dep)
+          assert 'schema' in _mod.spec, 'cannot depend on modules that do not have a schema'
+          db.declare_table(dep, _mod.spec['schema'])
+      if 'schema' not in self.spec:
+        assert not peek
+        return self.evaluate(db, args)
+
+      while True:
+        _f = self.peek if peek else self.evaluate
+        try:
+          return _f(db, args)
+        except CrawlerTrigger as t:
+          self.logger.info(f'Data({args._path}) does not exist in DB, crawling...')
+          if stocklab.config['force_offline']:
+            raise NoLongerAvailable('Please unset' +\
+                'force_offline option to enable crawlers')
+          db.update(self, self.crawler_entry(**t.kwargs))
+
+class MetaModule(Module):
+  def __init__(self):
+    super().__init__()
+
+  def db_is_fresh(self, db, last_crawl):
+    if last_crawl is None:
+      self.logger.info(f'Start default meta-module refresh routine')
+      raise CrawlerTrigger()
+    else:
+      self.logger.info(f'Refresh ends')
+
+  def update(self):
+    if 'schema' not in self.spec:
+      # module has nothing to do with DB & to update
+      return
+    if not self.is_outdated():
+      return
+    with get_db('database') as db:
+      db.declare_table(self.name, self.spec['schema'])
+      last_crawl = None
+      while True:
+        try:
+          self.db_is_fresh(db, last_crawl)
+        except CrawlerTrigger as t:
+          last_crawl = t.kwargs
+          if stocklab.config['force_offline']:
+            raise NoLongerAvailable('Please unset' +\
+                'force_offline option to enable crawlers')
+          self.logger.info(f'Refresh required, preparing...')
+          db.update(self, self.crawler_entry(**t.kwargs))
+          self.set_last_update_datetime()
+        else:
+          break
+
 import stocklab
 from stocklab.datetime import Date
 from stocklab.db import get_db
