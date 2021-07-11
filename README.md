@@ -1,17 +1,19 @@
 # stocklab
-In tasks such as financial data analysis and manipulation,
-data are usually retrieved from a very large base.
-People used to collect all the potentially useful data first, and then perform the analysis logic.
+In the financial data analysis tasks,
+data are retrieved from a very large base.
+We could collect all the potentially useful data first, and then perform the analysis logic.
 However, the completeness of data at hand poses limits on the potential of the research.
+
 At a personal pet project scale,
 it is somewhat difficult to gather every possible piece of data
-due to its amount, the awkward APIs, and the scattered nature of different information.
+due to its amount, the awkward APIs, and the scattered nature of information from different sources.
 Stocklab is a framework to defer the data retrieval until the analysis logic needs it.
 
-All of the data around the world are indexed as stocklab's `DataIdentifier`.
-By using DataIdentifier as a surrogate of the real data handle,
+All of the data accessable on the internet can be indexed as stocklab's `DataIdentifier`.
+By using DataIdentifier as a proxy of the real data handle,
 one can assume that all of the data are virtually available at hand when programming the analysis logic.
 The missing data will then be retrieved during the executing of the analysis logic.
+Crawlers and analysis logics can then be nicely decoupled.
 
 ## Usage
 See [stocklab-twse](https://github.com/hchsiao/stocklab-twse).
@@ -27,7 +29,7 @@ Analysis logics are also represented with DataIdentifier in the sense that the r
 - A single underscore in the expression means dont-care, otherwise expressions cannot start/end with underscore
 - TODO: is this really needed?
 
-#### Expression (TODO)
+#### Expression
 Here's the BNF grammar of the expression of a `DataIdentifier`.
 ```
 <data-identifier> ::= <data-identifier> <seperator1> <field> | <node-name>
@@ -65,7 +67,11 @@ an exception should be raised.
 
 #### Alternative Syntax
 For convinence, `ClosePrice.stock:2330.date:20201201` can also be written in Python as:
-`DI('ClosePrice')(stock=2330, date=20201201)` after `from stocklab import DataIdentifier as DI`.
+```
+from stocklab import DataIdentifier as DI
+DI('ClosePrice')(stock=2330, date=20201201)
+```
+
 The Python syntax for a DataIdentifier will not made portable across languages.
 
 ## TODO
