@@ -16,7 +16,13 @@ The missing data will then be retrieved during the executing of the analysis log
 Crawlers and analysis logics can then be nicely decoupled.
 
 ## Usage
-See [stocklab-twse](https://github.com/hchsiao/stocklab-twse).
+An (arguably) minimal example can be found [here](demo).
+To give it a try:
+```
+python demo.py
+```
+
+This framework has been used to build a real application, see [stocklab-twse](https://github.com/hchsiao/stocklab-twse).
 
 ## Specification
 Conceptually, a data analysis system consists of the data and the analysis logic.
@@ -75,4 +81,8 @@ DI('ClosePrice')(stock=2330, date=20201201)
 The Python syntax for a DataIdentifier will not made portable across languages.
 
 ## TODO
-- fix bug: init before mid-night (00:00), bug appears after mid-night (such as update conditions checking)
+- Add crawler core features
+- Add all features (i.e. DB, crawlers, logging, and config) to demo
+- Add docstrings
+- Move non-generic features from the old full version to `stocklab-twse`
+  - fix bug: init before mid-night (00:00), bug appears after mid-night (such as update conditions checking)
