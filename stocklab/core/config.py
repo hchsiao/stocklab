@@ -28,6 +28,7 @@ def configure(config):
             from yaml import Loader, Dumper
         __config = load(open(config, 'r').read(), Loader=Loader)
     else:
+        assert type(config) is not str, f'File {config} cannot be opened.'
         raise NotImplementedError()
 
     from . import logger

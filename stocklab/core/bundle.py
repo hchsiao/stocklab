@@ -14,6 +14,7 @@ import pathlib
 import importlib.util
 
 from .crawler import Crawler
+from .error import ExceptionWithInfo
 
 __bundles = [
         {'base': None, 'files': [], 'nodes': {}, 'crawlers': {}}, # The default bundle
@@ -75,6 +76,7 @@ def register(subject, bundle=0):
         assert spec, f"stocklab module {name} not found."
         target_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(target_module)
+        assert hasattr(target_module, name), f'File {subject} does not have an object named {name}.'
         cls = getattr(target_module, name)
         assert issubclass(cls, Node) or issubclass(cls, Crawler)
         if issubclass(cls, Node):
@@ -84,15 +86,16 @@ def register(subject, bundle=0):
     else:
         raise NotImplementedError()
 
-def __get(name, what):
-    print('bundle.__get', name, what)
+def _get(name, what, xcpt=True):
     for bndl in __bundles:
         if name in bndl[what]:
             return bndl[what][name]()
+    if xcpt:
+        raise ExceptionWithInfo(f'Cannot find {name} in bundles for type {what}.', __bundles)
     return None
 
 def get_node(name):
-    return __get(name, what='nodes')
+    return _get(name, what='nodes')
 
 def get_crawler(name):
-    return __get(name, what='crawlers')
+    return _get(name, what='crawlers')
