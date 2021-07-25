@@ -17,15 +17,32 @@ Crawlers and analysis logics can then be nicely decoupled.
 
 ## Usage
 An (arguably) minimal example can be found [here](demo).
-To give it a try:
+Run the entry point by:
 ```
 python demo.py
 ```
+If you run this twice, you'll see that the crawler logs only appear on the first run.
+The second run will not trigger data retrival because the all data were available in the database.
 
-This framework has been used to build a real application, see [stocklab-twse](https://github.com/hchsiao/stocklab-twse).
+This framework has been used to build another real-world application,
+see [stocklab-twse](https://github.com/hchsiao/stocklab-twse) for a more practical demo.
 
 ## Configuration
+| Name | Description |
+|------|-------------|
+| `config_name` | TODO: may be removed? |
+| `force_offline` | `CrawlerTrigger` will not trigger crawler actions. |
+| `root_dir` | Root path to all runtime generated files. |
+| `log_level` | See (Logging Levels)[https://docs.python.org/3/library/logging.html#levels]. |
+| `database` | See (Database configuration)[#database-configuration]. |
+
+### Database configuration
 TODO
+```
+database:
+  type: sqlite
+  filename: db.sqlite
+```
 
 ## Specification
 Conceptually, a data analysis system consists of the data and the analysis logic.
@@ -84,8 +101,6 @@ DI('ClosePrice')(stock=2330, date=20201201)
 This syntax for a DataIdentifier will not made portable across languages.
 
 ## TODO
-- Add crawler core features
-- Add all features (i.e. DB, crawlers, logging, and config) to demo
 - Add docstrings
   - Generate sphinx doc
 - Move non-generic features from the old full version to `stocklab-twse`

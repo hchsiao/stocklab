@@ -40,5 +40,6 @@ def configure(config):
                 relative_path_base, __config['root_dir'])
     __config['root_dir'] = os.path.normpath(__config['root_dir'])
 
+    import logging
     from . import logger
-    logger.get_instance('stocklab')
+    logger.get_instance().setLevel(getattr(logging, __config['log_level']))
