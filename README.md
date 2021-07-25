@@ -44,6 +44,9 @@ database:
   filename: db.sqlite
 ```
 
+## API documentation
+See [this](https://hchsiao.github.io/stocklab/).
+
 ## Specification
 Conceptually, a data analysis system consists of the data and the analysis logic.
 As mentioned, DataIdentifier is used as the access key to data.
@@ -101,7 +104,5 @@ DI('ClosePrice')(stock=2330, date=20201201)
 This syntax for a DataIdentifier will not made portable across languages.
 
 ## TODO
-- Add docstrings
-  - Generate sphinx doc
 - Move non-generic features from the old full version to `stocklab-twse`
   - fix bug: init before mid-night (00:00), bug appears after mid-night (such as update conditions checking)
