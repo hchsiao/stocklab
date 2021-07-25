@@ -1,13 +1,16 @@
 """ This module handles the registration of nodes/crawlers
-    and node/crawler collections (bundles).  A dict called
-    `__bundle` contains the registrated nodes/crawlers.
+    and node/crawler collections (bundles).  A `dict` called
+    `__bundles` contains the registrated nodes/crawlers.
 
-bundle.__bundles: A list of bundles. Each bundle is a dict
-    with four keys: 'base', 'files', 'nodes' and 'crawlers'.
-    The default bundle is a dict with 'base' is None.  The
-    value for 'files' is a list of source files.  The value
-    of 'nodes' and 'crawlers' is a dict of (node/crawler
-    name, class handle) pairs.  
+    *  `__bundles`: A list of registered nodes/crawlers. Each
+       bundle is a `dict` with four keys: `base`, `files`, `nodes`
+       and `crawlers`.  The default bundle is a `dict` with `base`
+       is None.  Other bundles will have `base` set to the path
+       to bundle modules.  Other keys represent:
+
+       *  `files`: list of source files.
+       *  `nodes`: mapping from node names to the class handle.
+       *  `crawlers`: mapping from crawler names to the class handle.
 """
 import os
 import pathlib
@@ -17,21 +20,25 @@ from .crawler import Crawler
 from .error import ExceptionWithInfo
 
 __bundles = [
-        {'base': None, 'files': [], 'nodes': {}, 'crawlers': {}}, # The default bundle
+        {
+            'base': None, 'files': [],
+            'nodes': {}, 'crawlers': {}}, # The default bundle
         ]
 
 def bundle(bundle_path):
-    """ Scan the bundle from a directory recursively and
-        register them.
+    """
+    Scan the bundle from a directory recursively and
+    register them.
     
     :param bundle_path: The path to the bundle.
+    :type bundle_path: str
     :returns: None
     """
     global __bundles
     # Maintain the entry in __bundle
-    if os.path.isfile(bundle_path):
+    if os.path.isfile(bundle_path): # the path points to a file
         bundle_base = str(pathlib.Path(bundle_path).parent.resolve())
-    else:
+    else: # the path points to a directory
         bundle_base = bundle_path
     __bundles.append({'base': bundle_base, 'files': [], 'nodes': {}, 'crawlers': {}})
     curr_bundle = __bundles[-1]
@@ -58,14 +65,19 @@ def bundle(bundle_path):
         register(subject=fp, bundle=-1)
 
 def register(subject, bundle=0):
-    """ Register a node/crawler so that it can be found under
+    """
+    Register a node/crawler so that it can be found under
     `stocklab.nodes` or `stocklab.crawlers` for all nodes.
     
-    :param subject: Could be the path to the file defines
-        the node/crawler, or a class object inherets `Node`/`Crawler`.
-    :param bundle: The index of the bundle, defaults to the default bundle.
+    :param subject: The path to the file defines the node/crawler, or the
+        class itself.
+    :type subject: str, Node, Crawler
+    :param bundle: The index of the bundle in `__bundles`, defaults to 0 (the
+        default bundle).
+    :type bundle: int
     :returns: None
-    :raises NotImplementedError: TODO
+    :raises NotImplementedError: Currently, only registration by file is
+        implemented.
     """
     global __bundle
     # TODO: check if already registered

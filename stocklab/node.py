@@ -3,6 +3,18 @@ from .core.config import get_config
 from .core.crawler import CrawlerTrigger
 
 class DataNode(Node):
+    """
+    Nodes with a database backend.
+
+    Attrubutes:
+
+    *  ignore_existed: The key of a new record may be existed in the
+        database. Keep the old record if the key duplicates. (defaults to:
+        False)
+    *  update_existed: The key of a new record may be existed in the
+        database. Keep the new record if the key duplicates. (defaults to:
+        False)
+    """
     def __init__(self):
         super().__init__()
         self.db = None
@@ -44,4 +56,5 @@ class DataNode(Node):
         self.db = None
         return retval
 
-Schema = dict
+class Schema(dict):
+    pass

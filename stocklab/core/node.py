@@ -4,6 +4,11 @@ from .runtime import Surrogate
 from .crawler import CrawlerTrigger
 
 class Node(StocklabObject):
+    """
+    The base class for stocklab Nodes.  Nodes are callable, parameters are
+    fields in the DataIdentifier.  It will return the evaluated result for a
+    DataIdentifier.
+    """
     def __init__(self):
         super().__init__()
         if hasattr(type(self), 'crawler_entry') and \
@@ -12,15 +17,19 @@ class Node(StocklabObject):
         # TODO: perform checks on configs
         # TODO: perform checks on individual configs
 
-    def default_attr(self, attr, default_val):
-        if not hasattr(self, attr):
-            setattr(self, attr, default_val)
-
     def path(self, **kwargs):
+        """
+        :param kwargs: Fields.
+        :returns: The DataIdentifier of the Fields with this node.
+        """
         return '.'.join([self.name] + [
             f'{k}:{v}' for k, v in kwargs.items() if k != 'self'])
 
     def type_normalization(self, kwargs):
+        """
+        Convert types for the fields according to the node's Args
+        declaration.
+        """
         assert len(self.args) == len(kwargs), f'Invalid fields: {kwargs}'
         assert all([k in self.args for k in kwargs.keys()]), f'Invalid fields: {kwargs}'
         # TODO: do it 'inplace'
@@ -40,13 +49,20 @@ class Node(StocklabObject):
             return type(self).crawler_entry(**t.kwargs)
 
     def evaluate(**kwargs):
+        """
+        This is used in the DataIdentifier evaluation. All child classes
+        should implement their own evaluation function.
+        """
         raise NotImplementedError()
 
 class Arg(dict):
+    """Used in node declarations. A `dict` of field specifications."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # TODO: setattr if oneof is set
         if 'type' not in self:
             self['type'] = str
 
-Args = dict
+class Args(dict):
+    """Used in node declarations. A `dict` of `Arg`."""
+    pass

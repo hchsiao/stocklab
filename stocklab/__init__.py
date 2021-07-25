@@ -4,6 +4,12 @@ from .core.config import configure
 DataIdentifier = get_node
 
 def eval(di_str):
+    """
+    Evaluate the DataIdentifier string.
+
+    :param di_str: the DataIdentifier.
+    :type di_str: str
+    """
     names = di_str.split('.')
     node_name = names[0]
     fields = [field.split(':') for field in names[1:]]

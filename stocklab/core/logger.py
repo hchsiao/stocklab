@@ -19,13 +19,14 @@ def _create(name, level):
     return logger
 
 def get_instance(name=None):
-    """ Returns the logger if it exists, otherwise setup a
-        logger with stocklab logging format.  Since the
-        configuration specifies the log level, stocklab must
-        be configured before getting a logger.
+    """
+    Returns the logger if it exists, otherwise setup a logger with stocklab
+    logging format.  Since the configuration specifies the log level,
+    stocklab must be configured before getting a logger.
     
-    :param name: A string represents the name of the logger.
-    :returns: A logger.
+    :param name: The name of the logger, defaults to None.
+    :type name: str
+    :returns: logging.Logger
     """
     global __loggers, __global_logger
     if name and name != 'stocklab': # 'stocklab' is reserved for global logger

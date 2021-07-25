@@ -14,10 +14,11 @@ def configure(config):
         for stocklab at the runtime.  Config 'root_dir' will be
         normalized to an absolute path.
     
-    :param config: Could be the path to the configuration
-        yaml file, or a python dict with the same information.
-    :returns: None
-    :raises NotImplementedError: TODO
+    :param config: Could be the path to the configuration yaml file, or a
+        `dict` loaded with that content.
+    :type config: str, dict
+    :raises NotImplementedError: Currently, only configuration by file
+        is implemented.
     """
     global __config
 
