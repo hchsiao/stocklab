@@ -1,12 +1,18 @@
-from .core.node import Node
-from .config import get_config
+from .core.node import Node, Arg, Args
+from .core.config import get_config
+from .core.crawler import CrawlerTrigger
 
 class DataNode(Node):
+    def __init__(self):
+        super().__init__()
+        self.db = None
+        self.default_attr('ignore_existed', False)
+        self.default_attr('update_existed', False)
+
     def _resolve(self, **kwargs):
         # TODO: explain this if-condition
         if not hasattr(self, 'schema') and not hasattr(self, 'db_dependencies'):
-            kwargs['self'] = self # Call-style adaption
-            return self.evaluate(**kwargs)
+            return super()._resolve(**kwargs)
         else:
             return self._resolve_with_db(**kwargs)
 
@@ -22,19 +28,20 @@ class DataNode(Node):
                 for dep in self.db_dependencies:
                     raise NotImplementedError()
             if not hasattr(self, 'schema'):
-                kwargs['self'] = self # Call-style adaption
-                retval = self.evaluate(**kwargs)
+                retval = type(self).evaluate(**kwargs)
 
             while retval is None:
                 try:
-                    kwargs['self'] = self # Call-style adaption
-                    retval = self.evaluate(**kwargs)
+                    retval = type(self).evaluate(**kwargs)
                 except CrawlerTrigger as t:
-                    self.logger.info(f'Data({args._path}) does not exist in DB, crawling...')
+                    path = self.path(**kwargs)
+                    self.logger.info(f'{path} does not exist in DB, crawling...')
                     if get_config('force_offline') == True:
                         raise NoLongerAvailable('Please unset' +\
                                 'force_offline option to enable crawlers')
-                    db.update(self, self.crawler_entry(**t.kwargs))
+                    db.update(self, type(self).crawler_entry(**t.kwargs))
         # TODO: refactor ENDS
         self.db = None
         return retval
+
+Schema = dict

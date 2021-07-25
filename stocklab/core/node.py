@@ -1,15 +1,24 @@
 from . import StocklabObject
 from .config import get_config
 from .runtime import Surrogate
+from .crawler import CrawlerTrigger
 
 class Node(StocklabObject):
     def __init__(self):
         super().__init__()
-        self.db = None
-        if isinstance(self.crawler_entry, Surrogate):
-            self.crawler_entry = Surrogate.resolve(self.crawler_entry)
+        if hasattr(type(self), 'crawler_entry') and \
+                isinstance(type(self).crawler_entry, Surrogate):
+            type(self).crawler_entry = Surrogate.resolve(type(self).crawler_entry)
         # TODO: perform checks on configs
         # TODO: perform checks on individual configs
+
+    def default_attr(self, attr, default_val):
+        if not hasattr(self, attr):
+            setattr(self, attr, default_val)
+
+    def path(self, **kwargs):
+        return '.'.join([self.name] + [
+            f'{k}:{v}' for k, v in kwargs.items() if k != 'self'])
 
     def type_normalization(self, kwargs):
         assert len(self.args) == len(kwargs), f'Invalid fields: {kwargs}'
@@ -25,10 +34,12 @@ class Node(StocklabObject):
         return retval
 
     def _resolve(self, **kwargs):
-        kwargs['self'] = self # Call-style adaption
-        return self.evaluate(**kwargs)
+        try:
+            return type(self).evaluate(**kwargs)
+        except CrawlerTrigger as t:
+            return type(self).crawler_entry(**t.kwargs)
 
-    def evaluate(self, **kwargs):
+    def evaluate(**kwargs):
         raise NotImplementedError()
 
 class Arg(dict):
@@ -39,4 +50,3 @@ class Arg(dict):
             self['type'] = str
 
 Args = dict
-Schema = dict

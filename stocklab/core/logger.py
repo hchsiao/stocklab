@@ -4,7 +4,7 @@ from .config import is_configured, get_config
 
 __loggers = {}
 
-def get_singleton(name):
+def get_instance(name):
     """ Returns the logger if it exists, otherwise setup a
         logger with stocklab logging format.  Since the
         configuration specifies the log level, stocklab must

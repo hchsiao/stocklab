@@ -24,6 +24,9 @@ python demo.py
 
 This framework has been used to build a real application, see [stocklab-twse](https://github.com/hchsiao/stocklab-twse).
 
+## Configuration
+TODO
+
 ## Specification
 Conceptually, a data analysis system consists of the data and the analysis logic.
 As mentioned, DataIdentifier is used as the access key to data.
@@ -78,11 +81,12 @@ from stocklab import DataIdentifier as DI
 DI('ClosePrice')(stock=2330, date=20201201)
 ```
 
-The Python syntax for a DataIdentifier will not made portable across languages.
+This syntax for a DataIdentifier will not made portable across languages.
 
 ## TODO
 - Add crawler core features
 - Add all features (i.e. DB, crawlers, logging, and config) to demo
 - Add docstrings
+  - Generate sphinx doc
 - Move non-generic features from the old full version to `stocklab-twse`
   - fix bug: init before mid-night (00:00), bug appears after mid-night (such as update conditions checking)

@@ -5,4 +5,4 @@ import stocklab_demo
 config_file = __file__.replace('demo.py', 'config.yml')
 stocklab.configure(config_file)
 
-print(stocklab.eval('Price.stock:acme.target_date:20201201'))
+print(stocklab.eval('MovingAverage.stock:acme.date_idx:1000.window:5'))

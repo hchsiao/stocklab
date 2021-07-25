@@ -49,11 +49,11 @@ def bundle(bundle_path):
                 if fext == '.py' and fname[0] != '_':
                     # Record full paths first, so the nodes/crawlers
                     # will be able to import each others through
-                    # `from stocklab.runtime import *`
+                    # `from stocklab.core.runtime import *`
                     curr_bundle['files'].append(fp)
     _scan(bundle_base)
 
-    # This is where the import from `stocklab.runtime` will be executed
+    # This is where the import from `stocklab.core.runtime` will be executed
     for fp in curr_bundle['files']:
         register(subject=fp, bundle=-1)
 

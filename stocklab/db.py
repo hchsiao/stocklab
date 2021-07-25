@@ -2,7 +2,8 @@
 import pydal
 from contextlib import ContextDecorator
 
-import stocklab
+from .core.logger import get_instance as get_logger
+from .core.config import get_config
 
 def _get_keys(schema):
   return [field_name
@@ -28,14 +29,14 @@ class get_db(pydal.DAL, ContextDecorator):
       return self._singleton
     else:
       self._singleton = None
-    self.config = stocklab.config[self.config_name]
-    self.logger = stocklab.create_logger(f'stocklab_db__{self.config_name}')
+    self.config = get_config(self.config_name)
+    self.logger = get_logger(f'stocklab_db__{self.config_name}')
     get_db._cfg_inst[self.config_name] = self
 
     assert self.config['type'] in ['sqlite', 'mssql']
     if self.config['type'] == 'sqlite':
       import os
-      db_path = os.path.join(stocklab.data_path, self.config['filename'])
+      db_path = os.path.join(get_config('root_dir'), self.config['filename'])
       uri = f'sqlite://{db_path}'
     elif self.config['type'] == 'mssql':
       host = self.config['host']
@@ -44,7 +45,7 @@ class get_db(pydal.DAL, ContextDecorator):
       driver = self.config['driver']
       uri = f'mssql4://{user}:{password}@{host}/stocklab-db?driver={driver}'
 
-    self.__kwargs['folder'] = stocklab.data_path
+    self.__kwargs['folder'] = get_config('root_dir')
     if 'rebuild_metadata' in self.config and self.config['rebuild_metadata']:
       self.__kwargs['fake_migrate_all'] = True # see pyDAL's 'migration'
     super().__init__(uri=uri, *self.__args, **self.__kwargs)
@@ -75,14 +76,12 @@ class get_db(pydal.DAL, ContextDecorator):
           for field_name in schema.keys()]
       self.define_table(name, *fields)
 
-  def update(self, mod, res):
+  def update(self, node, res):
     assert type(res) is list
     assert all([type(rec) is dict for rec in res])
-    schema = mod.spec['schema']
-    ignore_existed = mod.spec['ignore_existed'] if \
-        'ignore_existed' in mod.spec else False
-    update_existed = mod.spec['update_existed'] if \
-        'update_existed' in mod.spec else False
+    schema = node.schema
+    ignore_existed = node.ignore_existed
+    update_existed = node.update_existed
     assert not (ignore_existed and update_existed)
 
     def _proc(key, val):
@@ -110,13 +109,13 @@ class get_db(pydal.DAL, ContextDecorator):
           return qs[0] & _and(qs[1:])
       return _and(queries)
 
-    table = self[mod.name]
+    table = self[node.name]
     for rec in res:
       rec = {k:_proc(k, v) for k, v in rec.items()}
       if ignore_existed:
-        if not self[mod.name](_key_q(schema)):
-          self[mod.name].insert(**rec)
+        if not self[node.name](_key_q(schema)):
+          self[node.name].insert(**rec)
       elif update_existed:
-        self[mod.name].update_or_insert(_key_q(schema), **rec)
+        self[node.name].update_or_insert(_key_q(schema), **rec)
       else:
-        self[mod.name].insert(**rec)
+        self[node.name].insert(**rec)
