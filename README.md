@@ -33,8 +33,8 @@ see [stocklab-twse](https://github.com/hchsiao/stocklab-twse) for a more practic
 | `config_name` | TODO: may be removed? |
 | `force_offline` | `CrawlerTrigger` will not trigger crawler actions. |
 | `root_dir` | Root path to all runtime generated files. |
-| `log_level` | See (Logging Levels)[https://docs.python.org/3/library/logging.html#levels]. |
-| `database` | See (Database configuration)[#database-configuration]. |
+| `log_level` | See [Logging Levels](https://docs.python.org/3/library/logging.html#levels). |
+| `database` | See [Database configuration](#database-configuration). |
 
 ### Database configuration
 TODO
