@@ -1,0 +1,45 @@
+stocklab package
+================
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   stocklab.core
+
+Submodules
+----------
+
+stocklab.crawler module
+-----------------------
+
+.. automodule:: stocklab.crawler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.db module
+------------------
+
+.. automodule:: stocklab.db
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.node module
+--------------------
+
+.. automodule:: stocklab.node
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: stocklab
+   :members:
+   :undoc-members:
+   :show-inheritance:

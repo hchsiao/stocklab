@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>stocklab.core.bundle &#8212; stocklab  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex/" />
+    <link rel="search" title="Search" href="../../../../search/" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for stocklab.core.bundle</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; This module handles the registration of nodes/crawlers</span>
+<span class="sd">    and node/crawler collections (bundles).  A `dict` called</span>
+<span class="sd">    `__bundles` contains the registrated nodes/crawlers.</span>
+
+<span class="sd">    *  `__bundles`: A list of registered nodes/crawlers. Each</span>
+<span class="sd">       bundle is a `dict` with four keys: `base`, `files`, `nodes`</span>
+<span class="sd">       and `crawlers`.  The default bundle is a `dict` with `base`</span>
+<span class="sd">       is None.  Other bundles will have `base` set to the path</span>
+<span class="sd">       to bundle modules.  Other keys represent:</span>
+
+<span class="sd">       *  `files`: list of source files.</span>
+<span class="sd">       *  `nodes`: mapping from node names to the class handle.</span>
+<span class="sd">       *  `crawlers`: mapping from crawler names to the class handle.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">importlib.util</span>
+
+<span class="kn">from</span> <span class="nn">.crawler</span> <span class="kn">import</span> <span class="n">Crawler</span>
+<span class="kn">from</span> <span class="nn">.error</span> <span class="kn">import</span> <span class="n">ExceptionWithInfo</span>
+
+<span class="n">__bundles</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;crawlers&#39;</span><span class="p">:</span> <span class="p">{}},</span> <span class="c1"># The default bundle</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="bundle"><a class="viewcode-back" href="../../../../stocklab.core/#stocklab.core.bundle.bundle">[docs]</a><span class="k">def</span> <span class="nf">bundle</span><span class="p">(</span><span class="n">bundle_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scan the bundle from a directory recursively and</span>
+<span class="sd">    register them.</span>
+<span class="sd">    </span>
+<span class="sd">    :param bundle_path: The path to the bundle.</span>
+<span class="sd">    :type bundle_path: str</span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">__bundles</span>
+    <span class="c1"># Maintain the entry in __bundle</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">bundle_path</span><span class="p">):</span> <span class="c1"># the path points to a file</span>
+        <span class="n">bundle_base</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">bundle_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span> <span class="c1"># the path points to a directory</span>
+        <span class="n">bundle_base</span> <span class="o">=</span> <span class="n">bundle_path</span>
+    <span class="n">__bundles</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;base&#39;</span><span class="p">:</span> <span class="n">bundle_base</span><span class="p">,</span> <span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;crawlers&#39;</span><span class="p">:</span> <span class="p">{}})</span>
+    <span class="n">curr_bundle</span> <span class="o">=</span> <span class="n">__bundles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Scan the bundle folder for nodes (file name ends with</span>
+    <span class="c1"># .py) recurrsively</span>
+    <span class="k">def</span> <span class="nf">_scan</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fp</span><span class="p">):</span>
+                <span class="n">_scan</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">fbase</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+                <span class="n">fname</span><span class="p">,</span> <span class="n">fext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fbase</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">fext</span> <span class="o">==</span> <span class="s1">&#39;.py&#39;</span> <span class="ow">and</span> <span class="n">fname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;_&#39;</span><span class="p">:</span>
+                    <span class="c1"># Record full paths first, so the nodes/crawlers</span>
+                    <span class="c1"># will be able to import each others through</span>
+                    <span class="c1"># `from stocklab.core.runtime import *`</span>
+                    <span class="n">curr_bundle</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+    <span class="n">_scan</span><span class="p">(</span><span class="n">bundle_base</span><span class="p">)</span>
+
+    <span class="c1"># This is where the import from `stocklab.core.runtime` will be executed</span>
+    <span class="k">for</span> <span class="n">fp</span> <span class="ow">in</span> <span class="n">curr_bundle</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]:</span>
+        <span class="n">register</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">fp</span><span class="p">,</span> <span class="n">bundle</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="register"><a class="viewcode-back" href="../../../../stocklab.core/#stocklab.core.bundle.register">[docs]</a><span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">bundle</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Register a node/crawler so that it can be found under</span>
+<span class="sd">    `stocklab.nodes` or `stocklab.crawlers` for all nodes.</span>
+<span class="sd">    </span>
+<span class="sd">    :param subject: The path to the file defines the node/crawler, or the</span>
+<span class="sd">        class itself.</span>
+<span class="sd">    :type subject: str, Node, Crawler</span>
+<span class="sd">    :param bundle: The index of the bundle in `__bundles`, defaults to 0 (the</span>
+<span class="sd">        default bundle).</span>
+<span class="sd">    :type bundle: int</span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    :raises NotImplementedError: Currently, only registration by file is</span>
+<span class="sd">        implemented.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">__bundle</span>
+    <span class="c1"># TODO: check if already registered</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">subject</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.node</span> <span class="kn">import</span> <span class="n">Node</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">subject</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">subject</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">spec</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;stocklab module </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> not found.&quot;</span>
+        <span class="n">target_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+        <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">target_module</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target_module</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;File </span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s1"> does not have an object named </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">.&#39;</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">target_module</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Node</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Crawler</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Node</span><span class="p">):</span>
+            <span class="n">__bundles</span><span class="p">[</span><span class="n">bundle</span><span class="p">][</span><span class="s1">&#39;nodes&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">__bundles</span><span class="p">[</span><span class="n">bundle</span><span class="p">][</span><span class="s1">&#39;crawlers&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">what</span><span class="p">,</span> <span class="n">xcpt</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">bndl</span> <span class="ow">in</span> <span class="n">__bundles</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">bndl</span><span class="p">[</span><span class="n">what</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">bndl</span><span class="p">[</span><span class="n">what</span><span class="p">][</span><span class="n">name</span><span class="p">]()</span>
+    <span class="k">if</span> <span class="n">xcpt</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ExceptionWithInfo</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot find </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> in bundles for type </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="n">__bundles</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="get_node"><a class="viewcode-back" href="../../../../stocklab.core/#stocklab.core.bundle.get_node">[docs]</a><span class="k">def</span> <span class="nf">get_node</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s1">&#39;nodes&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_crawler"><a class="viewcode-back" href="../../../../stocklab.core/#stocklab.core.bundle.get_crawler">[docs]</a><span class="k">def</span> <span class="nf">get_crawler</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">_get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s1">&#39;crawlers&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../">stocklab</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../stocklab/">stocklab package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../">Documentation overview</a><ul>
+  <li><a href="../../../">Module code</a><ul>
+  <li><a href="../../">stocklab</a><ul>
+  <li><a href="../">stocklab.core</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search/" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

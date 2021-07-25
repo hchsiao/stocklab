@@ -1,0 +1,69 @@
+stocklab.core package
+=====================
+
+Submodules
+----------
+
+stocklab.core.bundle module
+---------------------------
+
+.. automodule:: stocklab.core.bundle
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.config module
+---------------------------
+
+.. automodule:: stocklab.core.config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.crawler module
+----------------------------
+
+.. automodule:: stocklab.core.crawler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.error module
+--------------------------
+
+.. automodule:: stocklab.core.error
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.logger module
+---------------------------
+
+.. automodule:: stocklab.core.logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.node module
+-------------------------
+
+.. automodule:: stocklab.core.node
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+stocklab.core.runtime module
+----------------------------
+
+.. automodule:: stocklab.core.runtime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: stocklab.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
