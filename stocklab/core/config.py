@@ -21,6 +21,7 @@ def configure(config):
         is implemented.
     """
     global __config
+    assert not is_configured()
 
     if os.path.isfile(config):
         from yaml import load, dump
