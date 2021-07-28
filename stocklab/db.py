@@ -30,6 +30,7 @@ class get_db(pydal.DAL, ContextDecorator):
     else:
       self._singleton = None
     self.config = get_config(self.config_name)
+    assert self.config, f'Failed to get config: {self.config_name}'
     self.logger = get_logger(f'stocklab_db__{self.config_name}')
     get_db._cfg_inst[self.config_name] = self
 

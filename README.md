@@ -102,7 +102,3 @@ DI('ClosePrice')(stock=2330, date=20201201)
 ```
 
 This syntax for a DataIdentifier will not made portable across languages.
-
-## TODO
-- Move non-generic features from the old full version to `stocklab-twse`
-  - fix bug: init before mid-night (00:00), bug appears after mid-night (such as update conditions checking)

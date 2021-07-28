@@ -5,8 +5,10 @@ __config = None
 def is_configured():
     return __config is not None
 
-def get_config(key):
+def get_config(key, may_not_exist=True):
     assert is_configured()
+    if may_not_exist and key not in __config:
+        return None
     return __config[key]
 
 def configure(config):
