@@ -27,8 +27,9 @@ __bundles = [
 
 def bundle(bundle_path):
     """
-    Scan the bundle from a directory recursively and
-    register them.
+    Scan the bundle from a directory recursively and register Nodes and
+    Crawlers.  Only files with a name ends with `.py`, starts with a capital
+    letter, and not in a hidden folder will be registered by this function.
     
     :param bundle_path: The path to the bundle.
     :type bundle_path: str
@@ -40,20 +41,23 @@ def bundle(bundle_path):
         bundle_base = str(pathlib.Path(bundle_path).parent.resolve())
     else: # the path points to a directory
         bundle_base = bundle_path
-    __bundles.append({'base': bundle_base, 'files': [], 'nodes': {}, 'crawlers': {}})
+    __bundles.append({
+        'base': bundle_base, 'files': [], 'nodes': {}, 'crawlers': {}})
     curr_bundle = __bundles[-1]
 
-    # Scan the bundle folder for nodes (file name ends with
-    # .py) recurrsively
+    # Scan the bundle folder for nodes and crawlers recurrsively
     def _scan(path):
         for fn in os.listdir(path):
+            if fn.startswith('.'):
+                continue
             fp = os.path.join(path, fn)
             if os.path.isdir(fp):
                 _scan(fp)
             else:
                 fbase = os.path.basename(fp)
                 fname, fext = os.path.splitext(fbase)
-                if fext == '.py' and fname[0] != '_':
+                if fext == '.py' and not fname.startswith('_') \
+                        and fname[0].isupper():
                     # Record full paths first, so the nodes/crawlers
                     # will be able to import each others through
                     # `from stocklab.core.runtime import *`
