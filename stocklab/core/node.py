@@ -3,6 +3,22 @@ from .config import get_config
 from .runtime import Surrogate
 from .crawler import CrawlerTrigger
 
+__cache = {}
+
+def set_cache(key, val):
+    global __cache
+    __cache[key] = val
+
+def get_cache(key):
+    global __cache
+    if key not in __cache:
+        return None
+    return __cache[key]
+
+def flush_cache():
+    global __cache
+    __cache = {}
+
 class Node(StocklabObject):
     """
     The base class for stocklab Nodes.  Nodes are callable, parameters are
@@ -23,7 +39,7 @@ class Node(StocklabObject):
         :returns: The DataIdentifier of the Fields with this node.
         """
         return '.'.join([self.name] + [
-            f'{k}:{v}' for k, v in kwargs.items() if k != 'self'])
+            f'{k}:{v}' for k, v in sorted(kwargs.items()) if k != 'self'])
 
     def type_normalization(self, kwargs):
         """
@@ -38,9 +54,12 @@ class Node(StocklabObject):
 
     def __call__(self, **kwargs):
         kwargs = self.type_normalization(kwargs)
-        retval = self._resolve(**kwargs)
-        assert retval is not None # TODO: do more sophiscated check
-        return retval
+        path = self.path(**kwargs)
+        if get_cache(path) is None:
+            retval = self._resolve(**kwargs)
+            assert retval is not None # TODO: do more sophiscated check
+            set_cache(path, retval)
+        return get_cache(path)
 
     def _resolve(self, **kwargs):
         try:
