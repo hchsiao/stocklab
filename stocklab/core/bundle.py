@@ -92,7 +92,8 @@ def register(subject, bundle=0):
         assert spec, f"stocklab module {name} not found."
         target_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(target_module)
-        assert hasattr(target_module, name), f'File {subject} does not have an object named {name}.'
+        assert hasattr(target_module, name), \
+                f'File {subject} does not have an object named {name}.'
         cls = getattr(target_module, name)
         assert issubclass(cls, Node) or issubclass(cls, Crawler)
         if issubclass(cls, Node):
@@ -107,7 +108,8 @@ def _get(name, what, xcpt=True):
         if name in bndl[what]:
             return bndl[what][name]()
     if xcpt:
-        raise ExceptionWithInfo(f'Cannot find {name} in bundles for type {what}.', __bundles)
+        raise ExceptionWithInfo(
+                f'Cannot find {name} in bundles for type {what}.', __bundles)
     return None
 
 def get_node(name):

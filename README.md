@@ -16,8 +16,8 @@ The missing data will then be retrieved during the executing of the analysis log
 Crawlers and analysis logics can then be nicely decoupled.
 
 ## Usage
-An (arguably) minimal example can be found [here](demo).
-Run the entry point by:
+An (arguably) minimal example can be found [here](tests/demo).
+To run the demo:
 ```
 python demo.py
 ```

@@ -1,4 +1,3 @@
-import os
 import stocklab
 import stocklab_demo
 

@@ -31,7 +31,9 @@ def configure(config):
             from yaml import CLoader as Loader, CDumper as Dumper
         except ImportError:
             from yaml import Loader, Dumper
-        __config = load(open(config, 'r').read(), Loader=Loader)
+        yml_file = open(config, 'r')
+        __config = load(yml_file.read(), Loader=Loader)
+        yml_file.close()
         relative_path_base = os.path.dirname(os.path.realpath(config))
     else:
         assert type(config) is not str, f'File {config} cannot be opened.'
