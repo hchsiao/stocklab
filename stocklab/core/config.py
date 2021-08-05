@@ -2,6 +2,14 @@ import os
 
 __config = None
 
+def _reset():
+    """
+    This is only used for testing.  To get a fresh session, we should
+    reset `config`, `bundle` and `logger` modules by calling their `reset()`.
+    """
+    global __config
+    __config = None
+
 def is_configured():
     return __config is not None
 

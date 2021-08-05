@@ -3,6 +3,14 @@ from .core.config import configure
 
 DataIdentifier = get_node
 
+def reset():
+    from .core.config import _reset as reset_config
+    from .core.bundle import _reset as reset_bundle
+    from .core.logger import _reset as reset_logger
+    reset_config()
+    reset_bundle()
+    reset_logger()
+
 def eval(di_str):
     """
     Evaluate the DataIdentifier string.

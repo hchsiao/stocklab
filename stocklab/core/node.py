@@ -29,7 +29,8 @@ class Node(StocklabObject):
         super().__init__()
         if hasattr(type(self), 'crawler_entry') and \
                 isinstance(type(self).crawler_entry, Surrogate):
-            type(self).crawler_entry = Surrogate.resolve(type(self).crawler_entry)
+            type(self).crawler_entry = \
+                    Surrogate.resolve(type(self).crawler_entry)
         # TODO: perform checks on configs
         # TODO: perform checks on individual configs
 
@@ -45,12 +46,21 @@ class Node(StocklabObject):
         """
         Convert types for the fields according to the node's Args
         declaration.
+
+        :returns: Checked & type casted parameters.
         """
         assert len(self.args) == len(kwargs), f'Invalid fields: {kwargs}'
-        assert all([k in self.args for k in kwargs.keys()]), f'Invalid fields: {kwargs}'
-        # TODO: do it 'inplace'
-        type_correct_fields = {k:self.args[k]['type'](v) for k, v in kwargs.items()}
-        return type_correct_fields
+        assert all([k in self.args for k in kwargs]), \
+                f'Invalid fields: {kwargs}'
+        for arg_name in kwargs:
+            arg_type = self.args[arg_name].type
+            arg_val = kwargs[arg_name]
+            if type(arg_type) is type:
+                kwargs[arg_name] = arg_type(arg_val)
+            else: # Arg is enum
+                assert type(arg_type) is list
+                assert arg_val in arg_type
+        return kwargs
 
     def __call__(self, **kwargs):
         kwargs = self.type_normalization(kwargs)
@@ -75,12 +85,17 @@ class Node(StocklabObject):
         raise NotImplementedError()
 
 class Arg(dict):
-    """Used in node declarations. A `dict` of field specifications."""
+    """
+    Used in node declarations. A `dict` of field specifications.
+    :param type: TODO, defaults to `str`.
+    :param oneof: (Optional) TODO.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # TODO: setattr if oneof is set
-        if 'type' not in self:
-            self['type'] = str
+        if 'oneof' in self:
+            self.type = self['oneof']
+        else:
+            self.type = self['type'] if 'type' in self else str
 
 class Args(dict):
     """Used in node declarations. A `dict` of `Arg`."""

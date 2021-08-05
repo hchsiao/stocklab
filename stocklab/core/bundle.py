@@ -16,14 +16,21 @@ import os
 import pathlib
 import importlib.util
 
-from .crawler import Crawler
 from .error import ExceptionWithInfo
 
-__bundles = [
-        {
-            'base': None, 'files': [],
-            'nodes': {}, 'crawlers': {}}, # The default bundle
-        ]
+__bundles = []
+
+def _reset():
+    """
+    This is only used for testing.  To get a fresh session, we should
+    reset `config`, `bundle` and `logger` modules by calling their `reset()`.
+    """
+    global __bundles
+    __bundles = []
+    default_bundle = {
+            'base': None, 'files': [], 'nodes': {}, 'crawlers': {}
+            }
+    __bundles.append(default_bundle)
 
 def bundle(bundle_path):
     """
@@ -68,7 +75,7 @@ def bundle(bundle_path):
     for fp in curr_bundle['files']:
         register(subject=fp, bundle=-1)
 
-def register(subject, bundle=0):
+def register(subject, bundle=0, allow_overwrite=False):
     """
     Register a node/crawler so that it can be found under
     `stocklab.nodes` or `stocklab.crawlers` for all nodes.
@@ -79,14 +86,15 @@ def register(subject, bundle=0):
     :param bundle: The index of the bundle in `__bundles`, defaults to 0 (the
         default bundle).
     :type bundle: int
+    :param allow_overwrite: TODO
+    :type allow_overwrite: bool
     :returns: None
     :raises NotImplementedError: Currently, only registration by file is
         implemented.
     """
     global __bundle
-    # TODO: check if already registered
-    if os.path.isfile(subject):
-        from .node import Node
+
+    if type(subject) is str and os.path.isfile(subject):
         name = os.path.basename(os.path.splitext(subject)[0])
         spec = importlib.util.spec_from_file_location(name, location=subject)
         assert spec, f"stocklab module {name} not found."
@@ -95,13 +103,21 @@ def register(subject, bundle=0):
         assert hasattr(target_module, name), \
                 f'File {subject} does not have an object named {name}.'
         cls = getattr(target_module, name)
-        assert issubclass(cls, Node) or issubclass(cls, Crawler)
-        if issubclass(cls, Node):
-            __bundles[bundle]['nodes'][name] = cls
-        else:
-            __bundles[bundle]['crawlers'][name] = cls
+    else:
+        cls = subject
+        name = cls.__name__
+
+    from .node import Node
+    from .crawler import Crawler
+    if issubclass(cls, Node):
+        subtype = 'nodes'
+    elif issubclass(cls, Crawler):
+        subtype = 'crawlers'
     else:
         raise NotImplementedError()
+
+    assert allow_overwrite or name not in __bundles[bundle][subtype]
+    __bundles[bundle][subtype][name] = cls
 
 def _get(name, what, xcpt=True):
     for bndl in __bundles:
@@ -117,3 +133,5 @@ def get_node(name):
 
 def get_crawler(name):
     return _get(name, what='crawlers')
+
+_reset()

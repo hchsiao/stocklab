@@ -5,6 +5,15 @@ from .config import is_configured, get_config
 __global_logger = None
 __loggers = {}
 
+def _reset():
+    """
+    This is only used for testing.  To get a fresh session, we should
+    reset `config`, `bundle` and `logger` modules by calling their `reset()`.
+    """
+    global __global_logger, __loggers
+    __global_logger = None
+    __loggers = {}
+
 def _create(name, level):
     logger = logging.getLogger(name)
     log_handler = logging.StreamHandler()
