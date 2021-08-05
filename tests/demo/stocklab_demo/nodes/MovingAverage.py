@@ -7,11 +7,6 @@ class MovingAverage(Node):
             stock = Arg(),
             window = Arg(type=int),
             )
-    schema = Schema(
-            stock = {'key': True},
-            date = {'type': 'integer', 'key': True},
-            note = {},
-            )
 
     def evaluate(date_idx, stock, window, **kwargs):
         dates = range(date_idx - window + 1, date_idx + 1)
