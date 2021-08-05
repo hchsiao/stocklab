@@ -88,12 +88,13 @@ class Arg(dict):
     """
     Used in node declarations. A `dict` of field specifications.
     :param type: TODO, defaults to `str`.
-    :param oneof: (Optional) TODO.
+    :param oneof: (Optional) TODO. Should be a list of strings.
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if 'oneof' in self:
             self.type = self['oneof']
+            assert all([type(enum) is str for enum in self.type])
         else:
             self.type = self['type'] if 'type' in self else str
 
