@@ -86,11 +86,12 @@ def register(subject, bundle=0, allow_overwrite=False):
     :param bundle: The index of the bundle in `__bundles`, defaults to 0 (the
         default bundle).
     :type bundle: int
-    :param allow_overwrite: TODO
+    :param allow_overwrite: Controls if `subject` can replace another
+        component which was already registered.
     :type allow_overwrite: bool
     :returns: None
-    :raises NotImplementedError: Currently, only registration by file is
-        implemented.
+    :raises AssertionError: An assertion will fail if the component name was
+        already registered and `allow_overwrite` is not set.
     """
     global __bundle
 
